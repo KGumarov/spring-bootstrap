@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import web.model.Role;
 import web.model.User;
 import web.service.RoleService;
 import web.service.UserService;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/admin")
@@ -36,22 +39,9 @@ public class AdminController {
     public String adminPage(Model model) {
         List<User> list = userService.getAllUsers();
         model.addAttribute("users", list);
+        model.addAttribute("user", new User());
+        model.addAttribute("all_roles", roleService.getAllRoles());
         return "admin";
-    }
-
-    @GetMapping("/{id}")
-    public String changeUserPage(@PathVariable("id") long id, Model model) {
-        model.addAttribute("user", userService.getUser(id));
-        model.addAttribute("roles", roleService.getAllRoles());
-        model.addAttribute("action", "Изменить");
-        return "change";
-    }
-
-    @GetMapping("/new")
-    public String addUserPage(@ModelAttribute("user") User user, Model model) {
-        model.addAttribute("roles", roleService.getAllRoles());
-        model.addAttribute("action", "Добавить");
-        return "change";
     }
 
     @PostMapping("/del")
@@ -67,8 +57,14 @@ public class AdminController {
         for (Long id : roleIds) {
             user.addRole(roleService.getRole(id));
         }
-        user.setPassword(passwordEncoder.encode(password));
+
+        String bCryptPassword = password.isEmpty() ?
+                userService.getUser(user.getId()).getPassword() :
+                passwordEncoder.encode(password);
+
+        user.setPassword(bCryptPassword);
         userService.saveUser(user);
         return "redirect:/admin";
     }
+
 }
